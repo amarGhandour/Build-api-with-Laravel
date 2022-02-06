@@ -19,14 +19,17 @@ class AuthorsTest extends TestCase
     public function it_returns_an_author_as_a_resource_object()
     {
 
-//        $this->withoutExceptionHandling();
-
         $author = Author::factory()->create();
         $user = User::factory()->create();
 
         Sanctum::actingAs($user);
 
-        $this->getJson("/api/v1/authors/$author->id")
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $this->getJson("/api/v1/authors/$author->id", $headers)
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -51,7 +54,13 @@ class AuthorsTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->getJson('/api/v1/authors')->assertOk()
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $this->getJson('/api/v1/authors', $headers)
+            ->assertOk()
             ->assertJson([
                 'data' => [
                     [
@@ -90,7 +99,12 @@ class AuthorsTest extends TestCase
 
         ];
 
-        $response = $this->postJson('/api/v1/authors', $resourceObject);
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $response = $this->postJson('/api/v1/authors', $resourceObject, $headers);
 
         $author = Author::firstOrFail();
 
@@ -124,6 +138,12 @@ class AuthorsTest extends TestCase
             'name' => 'Doe',
         ]);
 
+
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
         $this->patchJson("/api/v1/authors/$author->id", [
             'data' => [
                 'type' => 'authors',
@@ -132,7 +152,7 @@ class AuthorsTest extends TestCase
                     'name' => 'Jane',
                 ],
             ]
-        ])
+        ], $headers)
             ->assertOk()
             ->assertJson([
                 'data' => [
@@ -161,7 +181,12 @@ class AuthorsTest extends TestCase
         $user = User::factory()->create();
         Sanctum::actingAs($user);
 
-        $this->deleteJson("/api/v1/authors/$author->id")
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $this->deleteJson("/api/v1/authors/$author->id", [], $headers)
               ->assertNoContent();
 
         $this->assertDatabaseMissing('authors', [
@@ -170,5 +195,90 @@ class AuthorsTest extends TestCase
         ]);
 
     }
+
+
+    /**
+     * @test
+     */
+    public function it_validates_that_the_type_member_is_given_when_creating_an_author(){
+
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $author = Author::factory()->make();
+
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $this->postJson("/api/v1/authors", [
+            'data' => [
+                'type' => '',
+                'id' => $author->id,
+                'attributes' => [
+                    'name' => 'Jane',
+                ],
+            ]
+        ], $headers)->assertStatus(422)->assertJson([
+            'errors' => [
+                [
+                    'title' => 'Validation Error',
+                    'details' => 'The data.type field is required.',
+                    'source' => [
+                        'pointer' => '/data/type',
+                    ]
+                ]
+            ]
+        ]);
+
+        $this->assertDatabaseMissing('authors', [
+            'name' => $author->name
+        ]);
+
+    }
+
+    /**
+     * @test
+     */
+    public function it_validates_that_the_type_member_value_is_authors_when_creating_an_author(){
+
+        $user = User::factory()->create();
+        Sanctum::actingAs($user);
+        $author = Author::factory()->make();
+
+        $headers = [
+            'Accept' => 'application/vnd.api+json',
+            'Content-Type' => 'application/vnd.api+json',
+        ];
+
+        $this->postJson("/api/v1/authors", [
+            'data' => [
+                'type' => 'author',
+                'id' => $author->id,
+                'attributes' => [
+                    'name' => 'Jane',
+                ],
+            ]
+        ], $headers)->assertStatus(422)
+            ->assertJson([
+            'errors' => [
+                [
+                    'title' => 'Validation Error',
+                    'details' => 'The selected data.type is invalid.',
+                    'source' => [
+                        'pointer' => '/data/type',
+                    ]
+                ]
+            ]
+        ]);
+
+        $this->assertDatabaseMissing('authors', [
+            'name' => $author->name
+        ]);
+
+    }
+
+
 
 }
