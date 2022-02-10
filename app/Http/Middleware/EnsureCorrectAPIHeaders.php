@@ -5,7 +5,7 @@ namespace App\Http\Middleware;
 use Closure;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
-use \Symfony\Component\HttpFoundation\Response as BaseResponse;
+use Symfony\Component\HttpFoundation\Response as BaseResponse;
 
 class EnsureCorrectAPIHeaders
 {
@@ -24,7 +24,7 @@ class EnsureCorrectAPIHeaders
         }
 
         if ($request->has('Content-Type')||$request->isMethod('POST') || $request->isMethod('PATCH')){
-            if ($request->headers->get('Content-Type') !== 'application/vnd.api+json'){
+            if ($request->headers->get('Content-Type') !== "application/vnd.api+json") {
                 return $this->addCorrectContentType(new Response('', 415));
             }
         }

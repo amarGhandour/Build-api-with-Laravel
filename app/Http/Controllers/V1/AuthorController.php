@@ -8,14 +8,17 @@ use App\Http\Requests\updateAuthorRequest;
 use App\Http\Resources\AuthorCollection;
 use App\Http\Resources\AuthorResource;
 use App\Models\Author;
-use Illuminate\Http\Request;
 use Illuminate\Http\Response;
+use Illuminate\Support\Facades\DB;
 
 class AuthorController extends Controller
 {
-    public function index(){
+    public function index()
+    {
 
-        return response()->json(new AuthorCollection(Author::all()), Response::HTTP_OK);
+        $authors = DB::table('authors')->orderBy('name')->paginate(3);
+
+        return (new AuthorCollection($authors));
     }
 
     public function show(Author $author){
